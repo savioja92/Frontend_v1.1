@@ -306,7 +306,7 @@ const styles = {
   card: {
     width: "100%",
     maxWidth: "820px",
-    minHeight: "980px",
+    minHeight: "1000px",
     padding: "40px",
     boxSizing: "border-box",
     backgroundColor: "#ffffff",
@@ -494,8 +494,8 @@ const styles = {
     color: "#000",
     cursor: "pointer",
     maxWidth: "120px",
-    marginTop: "50px",
-    marginBottom: "20px"
+    marginTop: "60px",
+    marginBottom: "30px"
   },
   courseNameHeader: {
     fontSize: "20px",
