@@ -12,10 +12,11 @@ function App() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/teacherYears" element={<TeacherYearsPage />} />
+        <Route path="/teacherYears/:yearId/teacherCourses" element={<TeacherCoursesPage />} />
+        <Route path="/teacherYears/:yearId/teacherCourses/:courseName" element={<TeacherCourseDetailPage />} />
         <Route path="/teacherCourses" element={<TeacherCoursesPage />} />
         <Route path="/teacherCourses/:courseName" element={<TeacherCourseDetailPage />} />
         <Route path="/studentCourses" element={<StudentFrontPage />} />
-
       </Routes>
     </Router>
   );

@@ -3,11 +3,16 @@ import { useNavigate } from "react-router-dom";
 import LayoutCard from "../components/LayoutCard";
 import logo from "../assets/logo.png";
 import { vuosikurssit } from "../mockData/vuosikurssit";
+import { kurssit } from "../mockData/kurssit";
 import { styles } from "../styles/commonStyles";
 
 
 function TeacherYearsPage() {
   const navigate = useNavigate();
+
+  const getCourseCount = (yearId) => {
+    return kurssit.filter((course) => course.vuosikurssiId === yearId).length;
+  };
 
   return (
     <div style={styles.app}>
@@ -35,9 +40,15 @@ function TeacherYearsPage() {
               <li key={year.id} style={styles.listItem}>
                 <button
                   style={styles.primaryButton}
-                  onClick={() => navigate(`/teacherYears/${year.id}`)}
+                  onClick={() => navigate(`/teacherYears/${year.id}/teacherCourses`)}
                 >
-                  {year.nimi}
+                  <div style={{ fontWeight: "bold", marginBottom: "4px" }}>
+                    {year.kausi}
+                  </div>
+                  <div>{year.nimi}</div>
+                  <div style={{ fontWeight: "normal", fontSize: "0.9em", marginTop: "4px" }}>
+                    Kurssit: {getCourseCount(year.id)}
+                  </div>
                 </button>
               </li>
             ))}

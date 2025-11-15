@@ -24,7 +24,7 @@ function HomePage() {
           Helsingin Yliopiston<br />Hammaslääketieteen oppimisympäristö
         </p>
         <div style={styles.buttonContainer}>
-          <button style={styles.button} onClick={() => navigate("/teacherCourses")}>
+          <button style={styles.button} onClick={() => navigate("/teacherYears")}>
             Kirjaudu Sisään Opettajana
           </button>
           <button style={styles.button} onClick={() => navigate("/studentCourses")}>
