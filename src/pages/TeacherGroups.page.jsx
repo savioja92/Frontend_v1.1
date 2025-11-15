@@ -68,7 +68,7 @@ export default function TeacherGroupsPage() {
         {activeView === "groups" ? (
           <>
             <h1 style={{ fontSize: "24px", marginBottom: "10px" }}>
-              {ryhmalistaus.length > 0 ? ryhmalistaus[0].kurssitunnus : ""}: Ryhmät
+              {courseName}: Ryhmät
             </h1>
 
             {/* Ryhmät isona painikkeena */}
@@ -78,7 +78,12 @@ export default function TeacherGroupsPage() {
                   <button
                     key={ryhma.id}
                     style={styles.itemButton}
-                    onClick={() => alert(`Siirryt ryhmään: ${ryhma.nimi}`)}
+                    onClick={() => {
+                      const route = yearId
+                        ? `/teacherYears/${yearId}/teacherCourses/${courseName}/group/${ryhma.id}`
+                        : `/teacherCourses/${courseName}/group/${ryhma.id}`;
+                      navigate(route);
+                    }}
                   >
                     <div style={styles.courseInfo}>
                       <div>
@@ -94,7 +99,7 @@ export default function TeacherGroupsPage() {
         ) : (
           <>
             <h1 style={{ fontSize: "24px", marginBottom: "10px" }}>
-              {ryhmalistaus.length > 0 ? ryhmalistaus[0].kurssitunnus : ""}: Kortit
+              {courseName}: Kortit
             </h1>
 
             {/* Kortit isona painikkeena */}
