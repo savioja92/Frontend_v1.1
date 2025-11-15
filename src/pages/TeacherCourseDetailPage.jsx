@@ -1,8 +1,8 @@
 import React from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import TeacherAddCard from "../TeacherAddCard";
+import TeacherAddCard from "../components/TeacherAddCard";
 
-function TeacherAddCardWrapper() {
+function TeacherCourseDetailPage() {
   const { courseName } = useParams();
   const navigate = useNavigate();
 
@@ -14,4 +14,4 @@ function TeacherAddCardWrapper() {
   );
 }
 
-export default TeacherAddCardWrapper;
+export default TeacherCourseDetailPage;
