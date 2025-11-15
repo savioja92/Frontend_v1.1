@@ -5,6 +5,7 @@ import TeacherCoursesPage from "./pages/TeacherCoursesPage";
 import TeacherCourseDetailPage from "./pages/TeacherCourseDetailPage";
 import StudentFrontPage from "./pages/StudentFrontPage";
 import TeacherYearsPage from "./pages/TeacherYearsPage";
+import TeacherGroupsPage from "./pages/TeacherGroups.page";
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
         <Route path="/teacherYears" element={<TeacherYearsPage />} />
         <Route path="/teacherYears/:yearId/teacherCourses" element={<TeacherCoursesPage />} />
         <Route path="/teacherYears/:yearId/teacherCourses/:courseName" element={<TeacherCourseDetailPage />} />
+        <Route path="/teacherYears/:yearId/teacherCourses/:courseName/" element={<TeacherGroupsPage />} />
         <Route path="/teacherCourses" element={<TeacherCoursesPage />} />
         <Route path="/teacherCourses/:courseName" element={<TeacherCourseDetailPage />} />
         <Route path="/studentCourses" element={<StudentFrontPage />} />
