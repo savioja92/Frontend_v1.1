@@ -199,7 +199,29 @@ export const studentFrontStyles = {
     justifyContent: "space-between",
     alignItems: "center",
   },
-  arrow: { fontSize: "20px", fontWeight: "700" },
+  courseTexts:{
+  display: "flex",
+  flexDirection: "column",    // asettaa allekkain
+  alignItems: "flex-start",   // vasen reuna
+  textAlign: "left",          // varmistaa että teksti ei keskity
+  gap: "4px",    
+  },
+  courseTextsCode:{
+    marginBottom: "1px", 
+    marginTop: "1px"
+  },
+  
+  courseTextsName:{
+    marginBottom: "1px", 
+    marginTop: "1px"
+  },
+   courseTextsProgress:{
+   color: "#5C5C5C"
+  },
+  arrow: { 
+    fontSize: "20px", 
+    fontWeight: "700" },
+
   progressBar: {
     height: "8px",
     width: "100%",
@@ -233,7 +255,7 @@ export const teacherAddCardStyles = {
   input: { padding: "10px", fontSize: "16px", borderRadius: "8px", border: "1px solid #ccc", width: "100%", boxSizing: "border-box" },
   button: { padding: "12px 20px", backgroundColor: "#005A94", color: "#fff", border: "none", borderRadius: "0px", cursor: "pointer", fontSize: "16px", fontWeight: "500", width: "100%" },
   smallButton: { padding: "8px 15px", backgroundColor: "#005A94", color: "#fff", border: "none", borderRadius: "15px", cursor: "pointer", fontSize: "14px" },
-  deleteButton: { padding: "5px 10px", backgroundColor: "#000", color: "#fff", border: "1px solid #000", borderRadius: "10px", cursor: "pointer", fontSize: "14px" },
+  deleteButton: { marginTop: "60px", padding: "5px 10px", backgroundColor: "#ffffffff", color: "#000", border: "1px solid #000", borderRadius: "10px", cursor: "pointer", fontSize: "14px" },
   deleteButtonSmall: { padding: "3px 6px", backgroundColor: "#fff", color: "#000", border: "1px solid #000", borderRadius: "5px", cursor: "pointer", fontSize: "12px" },
   cardItem: { border: "1px solid #ccc", padding: "15px", borderRadius: "10px", backgroundColor: "#f9f9f9", marginBottom: "20px" },
   cardHeader: { display: "flex", justifyContent: "space-between", alignItems: "center" },

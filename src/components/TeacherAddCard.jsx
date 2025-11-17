@@ -8,7 +8,9 @@ function TeacherAddCard({ courseName }) {
   const navigate = useNavigate();
   const [cards, setCards] = useState([]);
   const [newCardName, setNewCardName] = useState("");
+  const [savedCards, setSavedCards] = useState([]);
 
+  // Lisää uusi kortti
   const addCard = () => {
     if (!newCardName.trim()) return;
     setCards(prev => [
@@ -94,16 +96,10 @@ function TeacherAddCard({ courseName }) {
     newCards[cardIndex].columns[colIndex].type = value;
 
     newCards[cardIndex].rows = newCards[cardIndex].rows.map(row => {
-      const oldVal = row[newCards[cardIndex].columns[colIndex].name];
-      if (value === "checkbox" && typeof oldVal !== "boolean")
-        newCards[cardIndex].rows.forEach(r => r[newCards[cardIndex].columns[colIndex].name] = false);
-      if (value === "radio")
-        newCards[cardIndex].rows.forEach(r => r[newCards[cardIndex].columns[colIndex].name] = "");
-      if (value !== "checkbox" && value !== "radio")
-        newCards[cardIndex].rows.forEach(r => {
-          if (typeof r[newCards[cardIndex].columns[colIndex].name] === "boolean")
-            r[newCards[cardIndex].columns[colIndex].name] = "";
-        });
+      const colName = newCards[cardIndex].columns[colIndex].name;
+      if (value === "checkbox") row[colName] = false;
+      else if (value === "radio") row[colName] = "";
+      else row[colName] = "";
       return row;
     });
 
@@ -125,9 +121,24 @@ function TeacherAddCard({ courseName }) {
 
   const handleCellChange = (cardIndex, rowIndex, colName, value) => {
     const newCards = [...cards];
+    const column = newCards[cardIndex].columns.find(c => c.name === colName);
+
+    // Estetään muokkaus jos responder on student
+    if (column.responder === "student") return;
+
     newCards[cardIndex].rows[rowIndex][colName] = value;
     setCards(newCards);
   };
+
+ const saveCard = (cardIndex) => {
+  const cardToSave = JSON.parse(JSON.stringify(cards[cardIndex])); // syväkopio tallennettavaksi
+  setSavedCards(prev => [...prev, cardToSave]);
+
+  // Poistetaan kortti cards-listasta, jotta muokkauslomake katoaa
+  const newCards = [...cards];
+  newCards.splice(cardIndex, 1);
+  setCards(newCards);
+};
 
   return (
     <div style={styles.app}>
@@ -135,9 +146,7 @@ function TeacherAddCard({ courseName }) {
         header={<img src={logo} alt="Logo" style={styles.logo} />}
         footer={<p style={styles.alatunniste}>@Helsingin Yliopisto</p>}
       >
-        <button style={styles.backButton} onClick={() => navigate(-1)}>
-          ← Takaisin
-        </button>
+        <button style={styles.backButton} onClick={() => navigate(-1)}>← Takaisin</button>
         <h1 style={styles.appNameMini}>DigiDens</h1>
         <p style={styles.subtitle}>
           Tervetuloa opettajan suoritekorttinäkymään! <br />
@@ -180,6 +189,7 @@ function TeacherAddCard({ courseName }) {
                 />
                 <button style={styles.smallButton} onClick={() => addColumn(ci)}>Lisää sarake</button>
                 <button style={styles.smallButton} onClick={() => addRow(ci)}>Lisää rivi</button>
+                <button style={styles.button} onClick={() => saveCard(ci)}>Tallenna suoritekortti</button>
               </div>
 
               {card.columns.length > 0 && (
@@ -281,6 +291,75 @@ function TeacherAddCard({ courseName }) {
             </div>
           ))}
         </div>
+
+        {/* Tallennetut kortit sivun alaosassa */}
+        <div style={styles.savedCardsContainer}>
+          {savedCards.map((card, ci) => (
+            <div key={ci} style={styles.savedCard}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <h3 style={{ marginTop: "50px", marginBottom:"2px" }}>{card.name}</h3>
+                <button
+                  style={styles.deleteButton}
+                  onClick={() => {
+                    const newSaved = [...savedCards];
+                    newSaved.splice(ci, 1);
+                    setSavedCards(newSaved);
+                  }}
+                >
+                  Poista <br /> kortti
+                </button>
+              </div>
+              {card.columns.length > 0 && (
+                <table style={{ ...styles.table, borderCollapse: "collapse", width: "100%" }}>
+                  <thead>
+                    <tr>
+                      {card.columns.map((col, colIndex) => (
+                        <th
+                          key={colIndex}
+                          style={{ border: "1px solid #ccc", padding: "6px", textAlign: "left" }}
+                        >
+                          {col.name}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {card.rows.map((row, ri) => (
+                      <tr key={ri}>
+                        {card.columns.map((col, colIndex) => (
+                          <td
+                            key={colIndex}
+                            style={{ border: "1px solid #ccc", padding: "6px", textAlign: "left" }}
+                          >
+                            {col.type === "checkbox" ? (
+                              <input type="checkbox" checked={row[col.name]} disabled />
+                            ) : col.type === "radio" ? (
+                              col.options.map((opt, idx) => (
+                                <label key={idx} style={{ display: "block" }}>
+                                  <input
+                                    type="radio"
+                                    name={`${ci}-${ri}-${colIndex}`}
+                                    value={opt}
+                                    checked={row[col.name] === opt}
+                                    disabled
+                                  />
+                                  {opt}
+                                </label>
+                              ))
+                            ) : (
+                              row[col.name]
+                            )}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          ))}
+        </div>
+
       </LayoutCard>
     </div>
   );

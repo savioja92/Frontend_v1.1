@@ -78,10 +78,10 @@ export default function StudentFrontPage({ opiskelijaId = 1 }) {
                 }
               >
                 <div style={styles.courseInfo}>
-                  <div>
-                    <h3>{k.tunnus || k.kurssitunnus}</h3>
-                    <p>{k.nimi}</p>
-                    <p>Edistyminen {k.tehtavatValmiina}/{k.tehtavatYhteensa}</p>
+                  <div style={styles.courseTexts}>
+                    <h3 style={styles.courseTextsCode}>{k.tunnus || k.kurssitunnus}</h3>
+                    <p style={styles.courseTextsCode}>{k.nimi}</p>
+                    <p style={styles.courseTextsProgress}>Edistyminen {k.tehtavatValmiina}/{k.tehtavatYhteensa}</p>
                   </div>
                   <div style={styles.arrow}>→</div>
                 </div>

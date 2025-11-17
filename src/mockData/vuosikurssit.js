@@ -1,4 +1,4 @@
 export const vuosikurssit = [
-  { id: 1, kausi: "Syksy", nimi: "2026-2025" },
-  { id: 2, kausi: "Kevät", nimi: "2025-2024" },
+  { id: 1, kausi: "Syksy", nimi: "2025-2026" },
+  { id: 2, kausi: "Kevät", nimi: "2024-2025" },
 ];
