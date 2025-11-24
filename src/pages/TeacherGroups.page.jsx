@@ -50,7 +50,7 @@ export default function TeacherGroupsPage() {
           <button
             style={{
               ...styles.primaryButton,
-              backgroundColor: activeView === "groups" ? "#007bff" : "#6c757d",
+              backgroundColor: activeView === "groups" ? "#005A94" : "#6c757d",
               padding: "10px 20px",
               fontSize: "16px",
             }}
@@ -61,7 +61,7 @@ export default function TeacherGroupsPage() {
           <button
             style={{
               ...styles.primaryButton,
-              backgroundColor: activeView === "cards" ? "#007bff" : "#6c757d",
+              backgroundColor: activeView === "cards" ? "#005A94" : "#6c757d",
               padding: "10px 20px",
               fontSize: "16px",
             }}
