@@ -21,18 +21,18 @@ function HomePage() {
             >
             </ds-icon>
             <div style={{ maxWidth: "200px" }}>
-              <h1 style={dsStyles.logoText}>HELSINGIN YLIOPISTO</h1>
+              <h1 style={dsStyles.headerText}>HELSINGIN YLIOPISTO</h1>
             </div>
           </div>
         }
-        footer={<p style={dsStyles.footer}>@Helsingin Yliopisto</p>}
+        footer={<p style={dsStyles.footerText}>@Helsingin Yliopisto</p>}
       >
       {/* Content only */}
       <div style={{ marginTop: "180px" }}>
-        <h1 style={dsStyles.header}>DigiDens</h1>
+        <h1 style={dsStyles.siteTitle}>DigiDens</h1>
       </div>
 
-      <p style={dsStyles.subHeader}>
+      <p style={dsStyles.subTitle}>
         Helsingin Yliopiston<br />Hammaslääketieteen oppimisympäristö
       </p>
 
