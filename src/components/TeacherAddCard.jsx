@@ -130,15 +130,15 @@ function TeacherAddCard({ courseName }) {
     setCards(newCards);
   };
 
- const saveCard = (cardIndex) => {
-  const cardToSave = JSON.parse(JSON.stringify(cards[cardIndex])); // syväkopio tallennettavaksi
-  setSavedCards(prev => [...prev, cardToSave]);
+  const saveCard = (cardIndex) => {
+    const cardToSave = JSON.parse(JSON.stringify(cards[cardIndex])); // syväkopio tallennettavaksi
+    setSavedCards(prev => [...prev, cardToSave]);
 
-  // Poistetaan kortti cards-listasta, jotta muokkauslomake katoaa
-  const newCards = [...cards];
-  newCards.splice(cardIndex, 1);
-  setCards(newCards);
-};
+    // Poistetaan kortti cards-listasta, jotta muokkauslomake katoaa
+    const newCards = [...cards];
+    newCards.splice(cardIndex, 1);
+    setCards(newCards);
+  };
 
   return (
     <div style={styles.app}>
@@ -180,7 +180,7 @@ function TeacherAddCard({ courseName }) {
                   type="text"
                   placeholder="Uuden sarakkeen nimi"
                   value={card.newColumnName || ""}
-                  onChange={(e) => { 
+                  onChange={(e) => {
                     const newCards = [...cards];
                     newCards[ci].newColumnName = e.target.value;
                     setCards(newCards);
@@ -297,7 +297,7 @@ function TeacherAddCard({ courseName }) {
           {savedCards.map((card, ci) => (
             <div key={ci} style={styles.savedCard}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <h3 style={{ marginTop: "50px", marginBottom:"2px" }}>{card.name}</h3>
+                <h3 style={{ marginTop: "50px", marginBottom: "2px" }}>{card.name}</h3>
                 <button
                   style={styles.deleteButton}
                   onClick={() => {

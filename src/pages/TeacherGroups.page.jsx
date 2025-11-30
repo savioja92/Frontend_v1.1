@@ -10,22 +10,33 @@ import { vuosikurssit } from "../mockData/vuosikurssit";
 export default function TeacherGroupsPage() {
   const navigate = useNavigate();
   const { courseName, yearId } = useParams();
-  const [activeView, setActiveView] = useState("groups"); // "groups" or "cards"
 
-  // Ryhmät aakkosjärjestyksessä
-  const ryhmalistaus = ryhmat.sort((a, b) => a.nimi.localeCompare(b.nimi));
+  const [activeView, setActiveView] = useState("groups");
+  const [query, setQuery] = useState("");
 
-  // Function to count students in a group
+  // Groups sorted alphabetically
+  const ryhmalistaus = [...ryhmat].sort((a, b) =>
+    a.nimi.localeCompare(b.nimi)
+  );
+
+  // Count students in a group
   const getStudentCount = (ryhmaId) => {
-    return opiskelijat.filter((student) => student.ryhmaId === ryhmaId).length;
+    return opiskelijat.filter((s) => s.ryhmaId === ryhmaId).length;
   };
 
-  // Get year info for breadcrumbs
-  const year = vuosikurssit.find((y) => y.id === parseInt(yearId));
+  // Filteröinti hakukyselyn perusteella
+  const filteredGroups = ryhmalistaus.filter((ryhma) =>
+    ryhma.nimi.toLowerCase().includes(query.toLowerCase())
+  );
 
-
-  // Placeholder for cards - you can add mock data later
+  // Placeholder card list
   const kortit = [];
+
+  const filteredCards = kortit.filter((card) =>
+    card.nimi?.toLowerCase().includes(query.toLowerCase())
+  );
+
+  const year = vuosikurssit.find((y) => y.id === parseInt(yearId));
 
   return (
     <div style={styles.app}>
@@ -41,21 +52,10 @@ export default function TeacherGroupsPage() {
         }
         footer={<p style={dsStyles.footer}>@Helsingin Yliopisto</p>}
       >
-
         {/* Navigointipalkit */}
         <div style={{ marginTop: "-10px", marginBottom: "30px" }}>
-          <ds-link
-            ds-text="Kotisivu"
-            ds-icon="chevron_forward"
-            ds-weight="bold"
-            ds-href="/"
-          />
-          <ds-link
-            ds-text="Lukuvuodet"
-            ds-icon="chevron_forward"
-            ds-weight="bold"
-            ds-href="/teacherYears"
-          />
+          <ds-link ds-text="Kotisivu" ds-icon="chevron_forward" ds-weight="bold" ds-href="/" />
+          <ds-link ds-text="Lukuvuodet" ds-icon="chevron_forward" ds-weight="bold" ds-href="/teacherYears" />
           {year && (
             <ds-link
               ds-text={year.nimi}
@@ -68,65 +68,75 @@ export default function TeacherGroupsPage() {
             ds-text="Kurssit"
             ds-icon="chevron_forward"
             ds-weight="bold"
-            ds-href={yearId ? `/teacherYears/${yearId}/teacherCourses` : "/teacherCourses"}
+            ds-href={
+              yearId
+                ? `/teacherYears/${yearId}/teacherCourses`
+                : "/teacherCourses"
+            }
           />
           <ds-link
             ds-text="Ryhmät ja kortit"
             ds-icon="chevron_forward"
             ds-weight="bold"
-            ds-href={yearId ? `/teacherYears/${yearId}/teacherCourses/${courseName}` : `/teacherCourses/${courseName}`}
-          >
-          </ds-link>
+            ds-href={
+              yearId
+                ? `/teacherYears/${yearId}/teacherCourses/${courseName}`
+                : `/teacherCourses/${courseName}`
+            }
+          />
         </div>
 
-
-        {/* Välilehdet */}
-        <div style={{ display: "flex", gap: "15px", }}>
+        {/* Näkymät */}
+        <div style={{ display: "flex", gap: "15px" }}>
           <ds-button
             ds-value="Ryhmät"
             ds-variant="secondary"
             ds-colour="black"
-            onClick={() => setActiveView("groups")}
-          >
-          </ds-button>
+            onClick={() => {
+              setQuery("");
+              setActiveView("groups");
+            }}
+          />
           <ds-button
             ds-value="Kortit"
             ds-variant="secondary"
             ds-colour="black"
-            onClick={() => setActiveView("cards")}
-          >
-          </ds-button>
+            onClick={() => {
+              setQuery("");
+              setActiveView("cards");
+            }}
+          />
         </div>
 
         {/* Ryhmänäkymä */}
         {activeView === "groups" ? (
           <>
-            {/* Sivun otsikko */}
             <h1 style={dsStyles.pageTitle}>{courseName}: Ryhmät</h1>
 
-            {/* Hakukenttä */}
+            {/* Hakukenttä*/}
             <ds-text-input
               style={{ width: "100%", marginBottom: "20px" }}
               ds-placeholder="Hae ryhmiä"
               ds-icon="search"
-            ></ds-text-input>
+              value={query}
+              onInput={(e) => setQuery(e.target.value)}
+            />
 
-
-            {/* Ryhmät isona painikkeena */}
             <div style={styles.itemContainer}>
-              {ryhmalistaus.map((ryhma) => {
+              {filteredGroups.map((ryhma) => {
                 const studentCount = getStudentCount(ryhma.id);
                 return (
                   <ds-card
                     key={ryhma.id}
                     ds-heading={ryhma.nimi}
                     ds-subtitle={`${studentCount} opiskelijaa`}
-                    ds-url={yearId
-                      ? `/teacherYears/${yearId}/teacherCourses/${courseName}/group/${ryhma.id}`
-                      : `/teacherCourses/${courseName}/group/${ryhma.id}`}
+                    ds-url={
+                      yearId
+                        ? `/teacherYears/${yearId}/teacherCourses/${courseName}/group/${ryhma.id}`
+                        : `/teacherCourses/${courseName}/group/${ryhma.id}`
+                    }
                     ds-url-target="_self"
-                  >
-                  </ds-card>
+                  />
                 );
               })}
             </div>
@@ -136,53 +146,43 @@ export default function TeacherGroupsPage() {
             {/* Korttinäkymä */}
             <h1 style={dsStyles.pageTitle}>{courseName}: Kortit</h1>
 
-            {/* Hakukenttä */}
+            {/* Hakukenttä EI TOIMINNALLINEN */}
             <ds-text-input
               style={{ width: "100%", marginBottom: "20px" }}
               ds-placeholder="Hae kortteja"
               ds-icon="search"
-            ></ds-text-input>
+              value={query}
+              onInput={(e) => setQuery(e.target.value)}
+            />
 
-
-            {/* Kortit isona painikkeena (EI VIELÄ HS-tyylin MUKAINEN*/}
             <div style={styles.itemContainer}>
-              {kortit.length === 0 ? (
+              {filteredCards.length === 0 ? (
                 <p>Ei vielä kortteja. Lisää uusi kortti.</p>
               ) : (
-                kortit.map((kortti) => {
-                  return (
-                    <button
-                      key={kortti.id}
-                      style={styles.itemButton}
-                    >
-                      <div style={styles.courseInfo}>
-                        <div>
-                          <p>{kortti.nimi}</p>
-                        </div>
-                        <div style={styles.arrow}>→</div>
-                      </div>
-                    </button>
-                  );
-                })
+                filteredCards.map((kortti) => (
+                  <button key={kortti.id} style={styles.itemButton}>
+                    <div style={styles.courseInfo}>
+                      <p>{kortti.nimi}</p>
+                      <div style={styles.arrow}>→</div>
+                    </div>
+                  </button>
+                ))
               )}
             </div>
 
-            {/* Lisää kortti -painike */}
+              {/* Luo uusi kortti -painike */}
             <div style={{ ...dsStyles.buttonContainer, marginTop: "120px" }}>
               <ds-button
                 ds-value="Luo uusi kortti"
                 ds-icon="edit"
                 ds-full-width="true"
-
                 onClick={() => {
                   const route = yearId
                     ? `/teacherYears/${yearId}/teacherCourses/${courseName}/teacherCards`
                     : `/teacherCourses/${courseName}/teacherCards`;
                   navigate(route);
                 }}
-              >
-              </ds-button>
-
+              />
             </div>
           </>
         )}
