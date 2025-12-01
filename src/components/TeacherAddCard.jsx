@@ -1,24 +1,41 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import logo from "../assets/logo.png";
+import { useNavigate, useParams } from "react-router-dom";
 import LayoutCard from "./LayoutCard";
 import { teacherAddCardStyles as styles } from "../styles/commonStyles";
+import { dsStyles } from "../styles/dsStyles";
+import { vuosikurssit } from "../mockData/vuosikurssit";
 
 function TeacherAddCard({ courseName }) {
-  const navigate = useNavigate();
   const [cards, setCards] = useState([]);
   const [newCardName, setNewCardName] = useState("");
   const [savedCards, setSavedCards] = useState([]);
+  const { yearId } = useParams();
+  const navigate = useNavigate();
+
+  // Helper to safely read event values from both web components and native inputs
+  const safeEventValue = (e) => {
+    if (!e) return undefined;
+    // web components often put payload in detail
+    if (e.detail && typeof e.detail.value !== "undefined") return e.detail.value;
+    if (e.detail && typeof e.detail.checked !== "undefined") return e.detail.checked;
+    // fallback to target.value / target.checked (native inputs)
+    if (e.target && typeof e.target.value !== "undefined") return e.target.value;
+    if (e.target && typeof e.target.checked !== "undefined") return e.target.checked;
+    return undefined;
+  };
 
   // Lisää uusi kortti
   const addCard = () => {
     if (!newCardName.trim()) return;
-    setCards(prev => [
+    setCards((prev) => [
       { name: newCardName, columns: [], newColumnName: "", rows: [] },
-      ...prev
+      ...prev,
     ]);
     setNewCardName("");
   };
+
+  // Get year info for breadcrumbs
+  const year = vuosikurssit.find((y) => y.id === parseInt(yearId));
 
   const deleteCard = (index) => {
     const newCards = [...cards];
@@ -28,21 +45,37 @@ function TeacherAddCard({ courseName }) {
 
   const addColumn = (cardIndex) => {
     const newCards = [...cards];
-    const colName = newCards[cardIndex].newColumnName.trim();
+    const colName = newCards[cardIndex].newColumnName?.trim();
     if (!colName) return;
 
     newCards[cardIndex].columns.push({
       name: colName,
-      type: "text",
+      type: "text", // default
       options: [],
       optionsRaw: "",
-      responder: "student"
+      responder: "student",
+      required: false,
     });
 
-    newCards[cardIndex].rows = newCards[cardIndex].rows.map(row => ({
+    // ensure each existing row gets the new column with default value
+    newCards[cardIndex].rows = newCards[cardIndex].rows.map((row) => ({
       ...row,
-      [colName]: newCards[cardIndex].columns.find(c => c.name === colName)?.type === "checkbox" ? false : ""
+      [colName]: false, // default false; will be normalized below
     }));
+
+    // normalize default values according to type (text -> "", checkbox -> false)
+    const col = newCards[cardIndex].columns[newCards[cardIndex].columns.length - 1];
+    if (col.type === "checkbox") {
+      newCards[cardIndex].rows = newCards[cardIndex].rows.map((row) => ({
+        ...row,
+        [colName]: false,
+      }));
+    } else {
+      newCards[cardIndex].rows = newCards[cardIndex].rows.map((row) => ({
+        ...row,
+        [colName]: "",
+      }));
+    }
 
     newCards[cardIndex].newColumnName = "";
     setCards(newCards);
@@ -51,7 +84,7 @@ function TeacherAddCard({ courseName }) {
   const addRow = (cardIndex) => {
     const newCards = [...cards];
     const row = {};
-    newCards[cardIndex].columns.forEach(col => {
+    newCards[cardIndex].columns.forEach((col) => {
       if (col.type === "checkbox") row[col.name] = false;
       else if (col.type === "radio") row[col.name] = "";
       else row[col.name] = "";
@@ -64,7 +97,7 @@ function TeacherAddCard({ courseName }) {
     const newCards = [...cards];
     const colName = newCards[cardIndex].columns[colIndex].name;
     newCards[cardIndex].columns.splice(colIndex, 1);
-    newCards[cardIndex].rows = newCards[cardIndex].rows.map(row => {
+    newCards[cardIndex].rows = newCards[cardIndex].rows.map((row) => {
       const newRow = { ...row };
       delete newRow[colName];
       return newRow;
@@ -81,26 +114,31 @@ function TeacherAddCard({ courseName }) {
   const handleColumnNameChange = (cardIndex, colIndex, value) => {
     const newCards = [...cards];
     const oldName = newCards[cardIndex].columns[colIndex].name;
-    newCards[cardIndex].columns[colIndex].name = value;
-    newCards[cardIndex].rows = newCards[cardIndex].rows.map(row => {
+    const newName = value;
+    newCards[cardIndex].columns[colIndex].name = newName;
+
+    newCards[cardIndex].rows = newCards[cardIndex].rows.map((row) => {
       const newRow = { ...row };
-      newRow[value] = newRow[oldName];
+      newRow[newName] = newRow[oldName];
       delete newRow[oldName];
       return newRow;
     });
+
     setCards(newCards);
   };
 
   const handleColumnTypeChange = (cardIndex, colIndex, value) => {
     const newCards = [...cards];
-    newCards[cardIndex].columns[colIndex].type = value;
+    const col = newCards[cardIndex].columns[colIndex];
+    col.type = value;
 
-    newCards[cardIndex].rows = newCards[cardIndex].rows.map(row => {
-      const colName = newCards[cardIndex].columns[colIndex].name;
-      if (value === "checkbox") row[colName] = false;
-      else if (value === "radio") row[colName] = "";
-      else row[colName] = "";
-      return row;
+    // Normalize existing rows for this column based on new type
+    newCards[cardIndex].rows = newCards[cardIndex].rows.map((row) => {
+      const newRow = { ...row };
+      if (value === "checkbox") newRow[col.name] = !!newRow[col.name] && newRow[col.name] !== "";
+      else if (value === "radio") newRow[col.name] = newRow[col.name] || "";
+      else newRow[col.name] = newRow[col.name] || "";
+      return newRow;
     });
 
     setCards(newCards);
@@ -108,8 +146,13 @@ function TeacherAddCard({ courseName }) {
 
   const handleColumnOptionsChange = (cardIndex, colIndex, value) => {
     const newCards = [...cards];
+    // store raw string
     newCards[cardIndex].columns[colIndex].optionsRaw = value;
-    newCards[cardIndex].columns[colIndex].options = value.split(", ");
+    // parse comma-separated options: split by comma, trim, remove empty
+    newCards[cardIndex].columns[colIndex].options = value
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
     setCards(newCards);
   };
 
@@ -119,79 +162,133 @@ function TeacherAddCard({ courseName }) {
     setCards(newCards);
   };
 
+  const handleRequiredChange = (cardIndex, colIndex, checked) => {
+    const newCards = [...cards];
+    newCards[cardIndex].columns[colIndex].required = !!checked;
+    setCards(newCards);
+  };
+
   const handleCellChange = (cardIndex, rowIndex, colName, value) => {
     const newCards = [...cards];
-    const column = newCards[cardIndex].columns.find(c => c.name === colName);
+    const column = newCards[cardIndex].columns.find((c) => c.name === colName);
 
-    // Estetään muokkaus jos responder on student
-    if (column.responder === "student") return;
+    // Prevent editing if responder is 'student'
+    if (column && column.responder === "student") return;
 
     newCards[cardIndex].rows[rowIndex][colName] = value;
     setCards(newCards);
   };
 
- const saveCard = (cardIndex) => {
-  const cardToSave = JSON.parse(JSON.stringify(cards[cardIndex])); // syväkopio tallennettavaksi
-  setSavedCards(prev => [...prev, cardToSave]);
+  const saveCard = (cardIndex) => {
+    const cardToSave = JSON.parse(JSON.stringify(cards[cardIndex])); // deep copy
+    setSavedCards((prev) => [...prev, cardToSave]);
 
-  // Poistetaan kortti cards-listasta, jotta muokkauslomake katoaa
-  const newCards = [...cards];
-  newCards.splice(cardIndex, 1);
-  setCards(newCards);
-};
+    // remove from editing list
+    const newCards = [...cards];
+    newCards.splice(cardIndex, 1);
+    setCards(newCards);
+  };
 
   return (
     <div style={styles.app}>
       <LayoutCard
-        header={<img src={logo} alt="Logo" style={styles.logo} />}
-        footer={<p style={styles.alatunniste}>@Helsingin Yliopisto</p>}
+        header={
+          <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+            <ds-icon ds-name="ds_flame" ds-size="4rem" ds-colour="ds-palette-black-95" />
+          </div>
+        }
+        footer={<p style={dsStyles.footer}>@Helsingin Yliopisto</p>}
       >
-        <button style={styles.backButton} onClick={() => navigate(-1)}>← Takaisin</button>
-        <h1 style={styles.appNameMini}>DigiDens</h1>
-        <p style={styles.subtitle}>
-          Tervetuloa opettajan suoritekorttinäkymään! <br />
-        </p>
-
-        <h2 style={styles.pageTitle}>Suoritekortit</h2>
-        {courseName && <div style={styles.courseNameHeader}>{courseName}</div>}
-        <p style={styles.subtitle2}>Luo ja hallinnoi tehtäväkortteja.</p>
-
-        <div style={styles.taskContainer}>
-          <input
-            type="text"
-            placeholder="Uuden kortin nimi"
-            value={newCardName}
-            onChange={(e) => setNewCardName(e.target.value)}
-            style={styles.input}
+        {/* Breadcrumbs */}
+        <div style={{ marginTop: "-10px", marginBottom: "30px" }}>
+          <ds-link ds-text="Kotisivu" ds-icon="chevron_forward" ds-weight="bold" ds-href="/" />
+          <ds-link ds-text="Lukuvuodet" ds-icon="chevron_forward" ds-weight="bold" ds-href="/teacherYears" />
+          {year && (
+            <ds-link ds-text={year.nimi} ds-icon="chevron_forward" ds-weight="bold" ds-href={`/teacherYears/${yearId}/teacherCourses`} />
+          )}
+          <ds-link
+            ds-text="Kurssit"
+            ds-icon="chevron_forward"
+            ds-weight="bold"
+            ds-href={yearId ? `/teacherYears/${yearId}/teacherCourses` : "/teacherCourses"}
           />
-          <button style={styles.button} onClick={addCard}>Luo uusi suoritekortti</button>
+          <ds-link
+            ds-text="Ryhmät ja kortit"
+            ds-icon="chevron_forward"
+            ds-weight="bold"
+            ds-href={yearId ? `/teacherYears/${yearId}/teacherCourses/${courseName}` : `/teacherCourses/${courseName}`}
+          />
+          {courseName && (
+            <ds-link
+              ds-text="Suoritekorttien luonti"
+              ds-icon="chevron_forward"
+              ds-weight="bold"
+              ds-href={yearId ? `/teacherYears/${yearId}/teacherCourses/${courseName}/teacherAddCards` : `/teacherCourses/${courseName}/teacherAddCards`}
+            />
+          )}
         </div>
+
+        <h2 style={dsStyles.pageTitle}>Suoritekortit</h2>
+        <p style={dsStyles.subTitle}>Luo ja hallinnoi tehtäväkortteja.</p>
+
+        <ds-text-input
+          style={dsStyles.textInput}
+          ds-placeholder="Uuden kortin nimi"
+          ds-value={newCardName}
+          onInput={(e) => {
+            const v = safeEventValue(e);
+            setNewCardName(typeof v === "string" ? v : e.target?.value ?? "");
+          }}
+        />
+
+        <ds-button
+          onClick={addCard}
+          ds-value="Luo uusi suoritekortti"
+          ds-required="true"
+          ds-full-width="true"
+          ds-icon="edit"
+        />
 
         <div style={styles.cardsContainer}>
           {cards.map((card, ci) => (
             <div key={ci} style={styles.cardItem}>
               <div style={styles.cardHeader}>
                 <h3>{card.name}</h3>
-                <button style={styles.deleteButton} onClick={() => deleteCard(ci)}>Poista kortti</button>
+                <ds-button
+                  style={{ marginLeft: "auto" }}
+                  ds-value="Poista kortti"
+                  ds-colour="black"
+                  ds-size="small"
+                  ds-icon="close"
+                  onClick={() => deleteCard(ci)}
+                />
               </div>
 
               <div style={styles.columnRow}>
-                <input
-                  type="text"
-                  placeholder="Uuden sarakkeen nimi"
-                  value={card.newColumnName || ""}
-                  onChange={(e) => { 
+                <ds-text-input
+                  style={dsStyles.textInput}
+                  ds-placeholder="Uuden sarakkeen nimi"
+                  ds-value={card.newColumnName || ""}
+                  onInput={(e) => {
+                    const v = safeEventValue(e);
                     const newCards = [...cards];
-                    newCards[ci].newColumnName = e.target.value;
+                    newCards[ci].newColumnName = typeof v === "string" ? v : e.target?.value ?? "";
                     setCards(newCards);
                   }}
-                  style={styles.input}
                 />
-                <button style={styles.smallButton} onClick={() => addColumn(ci)}>Lisää sarake</button>
-                <button style={styles.smallButton} onClick={() => addRow(ci)}>Lisää rivi</button>
-                <button style={styles.button} onClick={() => saveCard(ci)}>Tallenna suoritekortti</button>
+                <ds-button ds-value="Lisää sarake" ds-variant="secondary" ds-size="small" onClick={() => addColumn(ci)} />
+                <ds-button ds-value="Lisää rivi" ds-variant="secondary" ds-size="small" onClick={() => addRow(ci)} />
+                <ds-button
+                  style={{ marginLeft: "auto" }}
+                  ds-value="Tallenna suoritekortti"
+                  ds-variant="primary"
+                  ds-size="small"
+                  ds-icon="check"
+                  onClick={() => saveCard(ci)}
+                />
               </div>
 
+              {/* Columns editor */}
               {card.columns.length > 0 && (
                 <div style={{ overflowX: "auto" }}>
                   <table style={styles.table}>
@@ -199,88 +296,128 @@ function TeacherAddCard({ courseName }) {
                       <tr>
                         {card.columns.map((col, colIndex) => (
                           <th key={colIndex} style={{ ...styles.tableHeader, width: "200px" }}>
-                            <div>Sarakkeen nimi</div>
-                            <input
-                              type="text"
-                              value={col.name}
-                              onChange={(e) => handleColumnNameChange(ci, colIndex, e.target.value)}
-                              style={styles.columnInput}
+                            <div style={dsStyles.bodyText}>Sarakkeen nimi</div>
+                            <ds-text-input
+                              style={dsStyles.textInput}
+                              ds-placeholder="Sarakkeen nimi"
+                              ds-value={col.name}
+                              onInput={(e) => {
+                                const v = safeEventValue(e);
+                                handleColumnNameChange(ci, colIndex, typeof v === "string" ? v : e.target?.value ?? "");
+                              }}
                             />
-                            <div>Kysymyksen tyyppi</div>
-                            <select
-                              value={col.type}
-                              onChange={(e) => handleColumnTypeChange(ci, colIndex, e.target.value)}
-                              style={styles.selectInput}
-                            >
-                              <option value="text">Teksti</option>
-                              <option value="checkbox">Checkbox</option>
-                              <option value="radio">Radio</option>
-                            </select>
+
+                            <div style={{ marginTop: 8 }}>
+                              <div style={dsStyles.bodyText}>Vastaaja</div>
+                              <ds-select
+                                ds-label=""
+                                ds-clearable="false"
+                                ds-value={col.responder}
+                                onChange={(e) => handleResponderChange(ci, colIndex, e.detail?.value ?? col.responder)}
+                              >
+                                <ds-option ds-value="student">Oppilas</ds-option>
+                                <ds-option ds-value="teacher">Opettaja</ds-option>
+                              </ds-select>
+                            </div>
+
+                            <div style={{ marginTop: 8 }}>
+                              <div style={dsStyles.bodyText}>Kysymyksen tyyppi</div>
+
+                              {/* OPTION A: three stacked ds-radio-button */}
+                              <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 6 }}>
+                                <ds-radio-button
+                                  name={`type-${ci}-${colIndex}`}
+                                  ds-text="Teksti"
+                                  ds-value="text"
+                                  ds-checked={col.type === "text"}
+                                  onChange={(e) => handleColumnTypeChange(ci, colIndex, e.detail?.value ?? "text")}
+                                />
+                                <ds-radio-button
+                                  name={`type-${ci}-${colIndex}`}
+                                  ds-text="Checkbox"
+                                  ds-value="checkbox"
+                                  ds-checked={col.type === "checkbox"}
+                                  onChange={(e) => handleColumnTypeChange(ci, colIndex, e.detail?.value ?? "checkbox")}
+                                />
+                                <ds-radio-button
+                                  name={`type-${ci}-${colIndex}`}
+                                  ds-text="Monivalinta (Radio)"
+                                  ds-value="radio"
+                                  ds-checked={col.type === "radio"}
+                                  onChange={(e) => handleColumnTypeChange(ci, colIndex, e.detail?.value ?? "radio")}
+                                />
+                              </div>
+                            </div>
+
+                            {/* Radio options input (comma-separated) */}
                             {col.type === "radio" && (
                               <>
-                                <div>Vastausvaihtoehdot</div>
-                                <input
-                                  type="text"
-                                  placeholder="Pilkuilla erotettuna"
-                                  value={col.optionsRaw ?? ""}
-                                  onChange={(e) => handleColumnOptionsChange(ci, colIndex, e.target.value)}
-                                  style={styles.columnInput}
+                                <div style={dsStyles.bodyText} >Vastausvaihtoehdot (pilkuilla erotettuna)</div>
+                                <ds-text-input
+                                  style={dsStyles.textInput}
+                                  ds-placeholder="Esim: Kyllä, Ei, Ehkä"
+                                  ds-value={col.optionsRaw ?? ""}
+                                  onInput={(e) => {
+                                    const v = safeEventValue(e);
+                                    handleColumnOptionsChange(ci, colIndex, typeof v === "string" ? v : e.target?.value ?? "");
+                                  }}
                                 />
                               </>
                             )}
-                            <div>Vastaaja</div>
-                            <select
-                              value={col.responder}
-                              onChange={(e) => handleResponderChange(ci, colIndex, e.target.value)}
-                              style={styles.selectInput}
-                            >
-                              <option value="teacher">Opettaja</option>
-                              <option value="student">Oppilas</option>
-                            </select>
+
+
+                            <div style={{ marginTop: 8 }}>
+                              
+                            </div>
+
                           </th>
                         ))}
                         <th></th>
                       </tr>
                     </thead>
+
                     <tbody>
                       {card.rows.map((row, ri) => (
                         <tr key={ri}>
                           {card.columns.map((col, colIndex) => (
                             <td key={colIndex} style={{ ...styles.cellTd, width: "200px" }}>
+                              {/* Render cell editor according to column type using ds-components */}
                               {col.type === "checkbox" ? (
-                                <input
-                                  type="checkbox"
-                                  checked={row[col.name]}
-                                  onChange={(e) => handleCellChange(ci, ri, col.name, e.target.checked)}
-                                  style={styles.cellInputCheckbox}
+                                <ds-checkbox
+                                  ds-text=""
+                                  ds-checked={!!row[col.name]}
+                                  onChange={(e) => handleCellChange(ci, ri, col.name, !!(e.detail?.checked ?? e.target?.checked))}
                                 />
                               ) : col.type === "radio" ? (
                                 <div>
                                   {col.options?.map((opt, idx) => (
-                                    <label key={idx} style={{ display: "block" }}>
-                                      <input
-                                        type="radio"
-                                        name={`${ci}-${ri}-${colIndex}`}
-                                        value={opt}
-                                        checked={row[col.name] === opt}
-                                        onChange={(e) => handleCellChange(ci, ri, col.name, e.target.value)}
-                                      />
-                                      {opt}
-                                    </label>
+                                    <ds-radio-button
+                                      key={idx}
+                                      name={`radio-${ci}-${ri}-${colIndex}`}
+                                      ds-text={opt}
+                                      ds-value={opt}
+                                      ds-checked={row[col.name] === opt}
+                                      onChange={(e) => handleCellChange(ci, ri, col.name, e.detail?.value ?? e.target?.value)}
+                                    />
                                   ))}
                                 </div>
                               ) : (
-                                <input
-                                  type="text"
-                                  value={row[col.name]}
-                                  onChange={(e) => handleCellChange(ci, ri, col.name, e.target.value)}
-                                  style={styles.cellInput}
+                                <ds-text-input
+                                  ds-value={row[col.name] ?? ""}
+                                  onInput={(e) => handleCellChange(ci, ri, col.name, e.detail?.value ?? e.target?.value)}
                                 />
                               )}
                             </td>
                           ))}
                           <td>
-                            <button style={styles.deleteButtonSmall} onClick={() => deleteRow(ci, ri)}>Poista</button>
+                            <ds-button
+                              ds-value="Poista rivi"
+                              ds-variant="supplementary"
+                              ds-colour="black"
+                              ds-size="small"
+                              ds-icon="close"
+                              onClick={() => deleteRow(ci, ri)}
+                            />
                           </td>
                         </tr>
                       ))}
@@ -292,32 +429,32 @@ function TeacherAddCard({ courseName }) {
           ))}
         </div>
 
-        {/* Tallennetut kortit sivun alaosassa */}
+        {/* Saved cards */}
         <div style={styles.savedCardsContainer}>
           {savedCards.map((card, ci) => (
             <div key={ci} style={styles.savedCard}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <h3 style={{ marginTop: "50px", marginBottom:"2px" }}>{card.name}</h3>
-                <button
-                  style={styles.deleteButton}
+                <h1 style={dsStyles.labelText}>{card.name}</h1>
+                <ds-button
+                  style={{ marginLeft: "auto" }}
+                  ds-value="Poista kortti"
+                  ds-colour="black"
+                  ds-size="small"
+                  ds-icon="close"
                   onClick={() => {
                     const newSaved = [...savedCards];
                     newSaved.splice(ci, 1);
                     setSavedCards(newSaved);
                   }}
-                >
-                  Poista <br /> kortti
-                </button>
+                />
               </div>
+
               {card.columns.length > 0 && (
                 <table style={{ ...styles.table, borderCollapse: "collapse", width: "100%" }}>
                   <thead>
                     <tr>
                       {card.columns.map((col, colIndex) => (
-                        <th
-                          key={colIndex}
-                          style={{ border: "1px solid #ccc", padding: "6px", textAlign: "left" }}
-                        >
+                        <th key={colIndex} style={{ border: "1px solid #ccc", padding: "6px", textAlign: "left" }}>
                           {col.name}
                         </th>
                       ))}
@@ -327,22 +464,13 @@ function TeacherAddCard({ courseName }) {
                     {card.rows.map((row, ri) => (
                       <tr key={ri}>
                         {card.columns.map((col, colIndex) => (
-                          <td
-                            key={colIndex}
-                            style={{ border: "1px solid #ccc", padding: "6px", textAlign: "left" }}
-                          >
+                          <td key={colIndex} style={{ border: "1px solid #ccc", padding: "6px", textAlign: "left" }}>
                             {col.type === "checkbox" ? (
                               <input type="checkbox" checked={row[col.name]} disabled />
                             ) : col.type === "radio" ? (
                               col.options.map((opt, idx) => (
                                 <label key={idx} style={{ display: "block" }}>
-                                  <input
-                                    type="radio"
-                                    name={`${ci}-${ri}-${colIndex}`}
-                                    value={opt}
-                                    checked={row[col.name] === opt}
-                                    disabled
-                                  />
+                                  <input type="radio" name={`${ci}-${ri}-${colIndex}`} value={opt} checked={row[col.name] === opt} disabled />
                                   {opt}
                                 </label>
                               ))
@@ -359,7 +487,6 @@ function TeacherAddCard({ courseName }) {
             </div>
           ))}
         </div>
-
       </LayoutCard>
     </div>
   );
